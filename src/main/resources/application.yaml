@@ -1,3 +1,15 @@
 spring:
   application:
     name: spring-data-jpa-masterclass
+  datasource:
+    url: jdbc:postgresql://localhost:5432/spring_data_jpa_masterclass
+    username: postgres
+    password: password
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+        show_sql: true
