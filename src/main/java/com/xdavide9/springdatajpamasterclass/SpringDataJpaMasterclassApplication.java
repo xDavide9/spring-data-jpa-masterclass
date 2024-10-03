@@ -5,6 +5,9 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 
 import java.util.List;
 
@@ -49,17 +52,45 @@ public class SpringDataJpaMasterclassApplication {
 //            repository.findById(4L).ifPresentOrElse(
 //                    System.out::println,
 //                    () -> System.out.println("Student with id 4 not found"));
-            log.info("Getting maria by email");
-            repository.findStudentByEmail("maria@gmail.com").ifPresentOrElse(
-                    System.out::println,
-                    () -> System.out.println("Student with email maria@gmail.com not found"));
-            log.info("Getting students with first name John and age 36 using JPQL");
-            repository.findStudentsByFirstNameEqualsAndAgeEquals("John", 36).forEach(System.out::println);
-            log.info("Getting students with first name John and age 36 using JPQL named parameters");
-            repository.findStudentsByFirstNameEqualsAndAgeEqualsNamedParameters("John", 36).forEach(System.out::println);
-            log.info("Getting students with first name John and age 36 using a native query");
-            repository.findStudentsByFirstNameEqualsAndAgeEqualsNative("John", 36).forEach(System.out::println);
-            log.warn("Deleting students with first name John, rows affect: {}", repository.deleteStudentsByFirstName("John"));
+//            log.info("Getting maria by email");
+//            repository.findStudentByEmail("maria@gmail.com").ifPresentOrElse(
+//                    System.out::println,
+//                    () -> System.out.println("Student with email maria@gmail.com not found"));
+//            log.info("Getting students with first name John and age 36 using JPQL");
+//            repository.findStudentsByFirstNameEqualsAndAgeEquals("John", 36).forEach(System.out::println);
+//            log.info("Getting students with first name John and age 36 using JPQL named parameters");
+//            repository.findStudentsByFirstNameEqualsAndAgeEqualsNamedParameters("John", 36).forEach(System.out::println);
+//            log.info("Getting students with first name John and age 36 using a native query");
+//            repository.findStudentsByFirstNameEqualsAndAgeEqualsNative("John", 36).forEach(System.out::println);
+//            log.warn("Deleting students with first name John, rows affect: {}", repository.deleteStudentsByFirstName("John"));
+            log.info("Getting students in ascending order by first name");
+            repository.findAll(Sort.by("firstName").ascending()).forEach(System.out::println);  // this is implemented by PagingAndSortingRepository
+            log.info("Saving maria and john 4 times with different emails");
+            for (int i = 0; i < 4; i++) {
+                repository.save(Student.builder()
+                        .firstName("Maria")
+                        .lastName("Jones")
+                        .email(String.format("maria%d@gmail.com", i))
+                        .age(21).build());
+                repository.save(Student.builder()
+                        .firstName("John")
+                        .lastName("Doe")
+                        .email(String.format("john%d@gmail.com", i))
+                        .age(36).build());
+            }
+            PageRequest pageRequest = PageRequest.of(0, 5, Sort.by("firstName").ascending());
+            log.info("Getting students in ascending order by first name with pagination");
+            Page<Student> page = repository.findAll(pageRequest);
+            log.info("Total pages: {}", page.getTotalPages());
+            log.info("Page: {}", page.getNumber() + 1);
+            if (page.hasContent())
+                page.forEach(System.out::println);
+            while(page.hasNext()) {
+                page = repository.findAll(page.nextPageable());
+                log.info("Page: {}", page.getNumber() + 1);
+                if (page.hasContent())
+                    page.forEach(System.out::println);
+            }
         };
     }
 
