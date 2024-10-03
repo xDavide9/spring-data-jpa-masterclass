@@ -32,6 +32,7 @@ import static jakarta.persistence.GenerationType.*;
                 )
         }
 )
+@Builder
 public class Student {
     // use a sequence to generate the id
     @SequenceGenerator(
