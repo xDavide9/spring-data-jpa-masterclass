@@ -32,23 +32,34 @@ public class SpringDataJpaMasterclassApplication {
                     .lastName("Doe")
                     .email("joh@gmail.com")
                     .age(36).build();
-            log.info("Saving maria");
-            repository.save(maria);
-            log.warn("Deleting maria");
-            repository.deleteById(1L);
+//            log.info("Saving maria");
+//            repository.save(maria);
+//            log.warn("Deleting maria");
+//            repository.deleteById(1L);
             log.info("Saving maria and john");
             repository.saveAll(List.of(maria, john));
-            log.info("Fetching maria and john");
-            List<Student> students = repository.findAll();
-            students.forEach(System.out::println);
-            log.info("Fetching student with id 3");
-            repository.findById(3L).ifPresentOrElse(
+//            log.info("Fetching maria and john");
+//            List<Student> students = repository.findAll();
+//            students.forEach(System.out::println);
+//            log.info("Fetching student with id 3");
+//            repository.findById(3L).ifPresentOrElse(
+//                    System.out::println,
+//                    () -> System.out.println("Student with id 3 not found"));
+//            log.info("Fetching student with id 4");
+//            repository.findById(4L).ifPresentOrElse(
+//                    System.out::println,
+//                    () -> System.out.println("Student with id 4 not found"));
+            log.info("Getting maria by email");
+            repository.findStudentByEmail("maria@gmail.com").ifPresentOrElse(
                     System.out::println,
-                    () -> System.out.println("Student with id 3 not found"));
-            log.info("Fetching student with id 4");
-            repository.findById(4L).ifPresentOrElse(
-                    System.out::println,
-                    () -> System.out.println("Student with id 4 not found"));
+                    () -> System.out.println("Student with email maria@gmail.com not found"));
+            log.info("Getting students with first name John and age 36 using JPQL");
+            repository.findStudentsByFirstNameEqualsAndAgeEquals("John", 36).forEach(System.out::println);
+            log.info("Getting students with first name John and age 36 using JPQL named parameters");
+            repository.findStudentsByFirstNameEqualsAndAgeEqualsNamedParameters("John", 36).forEach(System.out::println);
+            log.info("Getting students with first name John and age 36 using a native query");
+            repository.findStudentsByFirstNameEqualsAndAgeEqualsNative("John", 36).forEach(System.out::println);
+            log.warn("Deleting students with first name John, rows affect: {}", repository.deleteStudentsByFirstName("John"));
         };
     }
 

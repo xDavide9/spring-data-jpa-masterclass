@@ -11,7 +11,7 @@ import static jakarta.persistence.GenerationType.*;
 @AllArgsConstructor
 @ToString
 @EqualsAndHashCode
-@Entity(name = "Student")   // specify the name of the entity as good practice,
+@Entity(name = "Student")   // specify the name of the entity as good practice this is used in queries
                             // default is class name anyways like specified
 // @Table allows more granular control of uniqueContraints, table name, schema, indexes
 @Table(
