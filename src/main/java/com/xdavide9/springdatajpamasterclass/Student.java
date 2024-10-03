@@ -9,8 +9,8 @@ import static jakarta.persistence.GenerationType.*;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-@ToString
-@EqualsAndHashCode
+@ToString(exclude = "studentIdCard")    // excluding to avoid a circular reference because of the bidirectional relationship
+@EqualsAndHashCode(exclude = "studentIdCard")
 @Entity(name = "Student")   // specify the name of the entity as good practice this is used in queries
                             // default is class name anyways like specified
 // @Table allows more granular control of uniqueContraints, table name, schema, indexes
@@ -78,4 +78,17 @@ public class Student {
             nullable = false
     )
     private int age;
+
+    // @Transient is used to specify that a field should not be persisted to the database
+
+    // bidirectional one to one with StudentIdCard (it's fine for one to one but not so good for other relathionships)
+    @OneToOne(
+            mappedBy = "student",  // specify the java field property in the owning side of the relationship
+            // while it's tecnically possible to specify cascade here it's better to specify it in the owning side of the relationship
+            orphanRemoval = true // only specify this on the side of the relationship that matters more...
+            // example if i delete a student i also want to delete his card but if i delete a card i don't want to delete the student
+            // NOTE it doesn't really have anything to do with the owning side of the relationship
+    )
+    private StudentIdCard studentIdCard;
+
 }

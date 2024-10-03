@@ -15,14 +15,41 @@ import java.util.List;
 @Slf4j
 public class SpringDataJpaMasterclassApplication {
 
-    public SpringDataJpaMasterclassApplication() {
-    }
+    // when working with spring data jpa it's important to explict configuration about columns and tables names in sql @Column @JoinColumn @Table...
+    // but there are some other annotations that work with java members like @Entity (name of the class same as entity) mappedBy uses the property name in the owning side of the relationship...
 
     public static void main(String[] args) {
         SpringApplication.run(SpringDataJpaMasterclassApplication.class, args);
     }
 
-    @Bean   // experimenting with the methods provided by repository (standard crud operations)
+    @Bean
+    CommandLineRunner commandLineRunnerRelations(StudentRepository studentRepository, StudentIdCardRepository studentIdCardRepository) {
+        return args -> {
+            Student maria = Student.builder()
+                    .firstName("Maria")
+                    .lastName("Jones")
+                    .email("maria@gmail.com")
+                    .age(21).build();
+            StudentIdCard studentIdCard = StudentIdCard.builder()
+                    .cardNumber("1234567890")
+                    .student(maria).build();
+            // this is working even if the studentRepository was not used to save the student first because of the cascade specified in StudentIdCard
+            studentIdCardRepository.save(studentIdCard);
+
+            // thanks to a bidirectional relationship we can see the card from the student too
+            studentRepository.findById(1L)
+                    .ifPresent(System.out::println);
+
+            // we can see the student from the card
+            studentIdCardRepository.findById(1L)
+                    .ifPresent(System.out::println);
+
+            // deleting also the student card thanks to the orphanRemoval = true in Student side of relationship
+            studentRepository.deleteById(1L);
+        };
+    }
+
+    //@Bean   // experimenting with the methods provided by repository (standard crud operations)
     CommandLineRunner commandLineRunner(StudentRepository repository) {
         return args -> {
             Student maria = Student.builder()
