@@ -10,6 +10,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 @SpringBootApplication
@@ -24,6 +25,14 @@ public class SpringDataJpaMasterclassApplication {
     }
 
     @Bean
+    CommandLineRunner commandLineRunnerManyToMany(StudentRepository studentRepository, StudentService studentService, CourseRepository courseRepository) {
+        return args -> {
+            studentService.persistStudentsWithEnrollment();
+            studentService.fetchStudentEnrolments(1L);
+        };
+    }
+
+    //@Bean
     CommandLineRunner commandLineRunnerRelations(StudentRepository studentRepository, StudentIdCardRepository studentIdCardRepository, StudentService studentService) {
         return args -> {
             Student maria = Student.builder()

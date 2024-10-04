@@ -12,8 +12,8 @@ import static jakarta.persistence.GenerationType.*;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-@ToString(exclude = {"studentIdCard", "books"})    // excluding  studentIdCard to avoid a circular reference because of the bidirectional relationship
-@EqualsAndHashCode(exclude = {"studentIdCard", "books"})    // excluding books because of lazy loading so it's not always garanteed to have books loaded
+@ToString(exclude = {"studentIdCard", "books", "enrolments"})    // excluding  studentIdCard to avoid a circular reference because of the bidirectional relationship
+@EqualsAndHashCode(exclude = {"studentIdCard", "books", "enrolments"})    // excluding books and enrolments because of lazy loading so it's not always garanteed to have books loaded
 @Entity(name = "Student")   // specify the name of the entity as good practice this is used in queries
                             // default is class name anyways like specified
 // @Table allows more granular control of uniqueContraints, table name, schema, indexes
@@ -125,4 +125,72 @@ public class Student {
         }
         return false;
     }
+
+//    // simple many to many created with a join table
+//    // straightforward but does not allow for additional columns in the join table
+//    @ManyToMany(
+//            cascade = {CascadeType.PERSIST, CascadeType.REMOVE},
+//            fetch = FetchType.LAZY
+//    )
+//    @JoinTable(
+//            name = "enrolment",
+//            joinColumns = @JoinColumn(  // the columns to join in this class (Student)
+//                    name = "student_id",
+//                    referencedColumnName = "id"
+//            ),
+//            inverseJoinColumns = @JoinColumn(       // the columns to join in the other side of the relationship (Course)
+//                    name = "course_id",
+//                    referencedColumnName = "id"
+//            )
+//    )
+//    @Builder.Default
+//    private List<Course> courses = new ArrayList<>();
+//
+//    // aggregate pattern methods
+//    public boolean addCourse(Course course) {
+//        if (!courses.contains(course)) {
+//            courses.add(course);
+//            return true;
+//        }
+//        return false;
+//    }
+//
+//    public boolean removeCourse(Course course) {
+//        if (courses.contains(course)) {
+//            courses.remove(course);
+//            return true;
+//        }
+//        return false;
+//    }
+
+    // it's better to use a manually created entity
+    @Builder.Default
+    @OneToMany(
+            cascade = CascadeType.ALL,
+            // more students could partecipate in it
+            fetch = FetchType.LAZY,
+            mappedBy = "student",    // student field in Enrolment class
+            orphanRemoval = true
+    )
+    private List<Enrolment> enrolments = new ArrayList<>();
+
+    // it looks similar to before with the aggregate pattern but actually
+    // student is not in charge of managing the courses
+    // because they exist on their own and have their own repository
+    // managing the bidirectional relationship is the most complex here
+    public boolean addEnrolment(Enrolment enrolment) {
+        if (!enrolments.contains(enrolment)) {
+            enrolments.add(enrolment);
+            return true;
+        }
+        return false;
+    }
+    public boolean removeEnrolment(Enrolment enrolment) {
+        if (enrolments.contains(enrolment)) {
+            enrolments.remove(enrolment);
+            return true;
+        }
+        return false;
+    }
+
 }
