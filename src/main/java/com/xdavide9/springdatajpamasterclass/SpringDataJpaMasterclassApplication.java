@@ -9,6 +9,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @SpringBootApplication
@@ -23,7 +24,7 @@ public class SpringDataJpaMasterclassApplication {
     }
 
     @Bean
-    CommandLineRunner commandLineRunnerRelations(StudentRepository studentRepository, StudentIdCardRepository studentIdCardRepository) {
+    CommandLineRunner commandLineRunnerRelations(StudentRepository studentRepository, StudentIdCardRepository studentIdCardRepository, StudentService studentService) {
         return args -> {
             Student maria = Student.builder()
                     .firstName("Maria")
@@ -33,18 +34,50 @@ public class SpringDataJpaMasterclassApplication {
             StudentIdCard studentIdCard = StudentIdCard.builder()
                     .cardNumber("1234567890")
                     .student(maria).build();
-            // this is working even if the studentRepository was not used to save the student first because of the cascade specified in StudentIdCard
-            studentIdCardRepository.save(studentIdCard);
+            Book book = Book.builder()
+                    .bookName("The Alchemist")
+                    .createdAt(LocalDateTime.now())
+                    .student(maria).build();
+            Book book1 = Book.builder()
+                    .bookName("Clean Code")
+                    .createdAt(LocalDateTime.now().minusYears(1L))
+                    .student(maria).build();
+            Book book2 = Book.builder()
+                    .bookName("The Pragmatic Programmer")
+                    .createdAt(LocalDateTime.now().minusYears(2L))
+                    .student(maria).build();
+            maria.addBook(book);
+            maria.addBook(book1);
+            maria.addBook(book2);
+            maria.setStudentIdCard(studentIdCard);
+
+            // persisting the student will persist the card and the books thanks to the cascade operations
+            // Note that the student owns the relationship with books but the card owns the relationship with the student
+            // so it doesn't matter who is the owning side
+            studentRepository.save(maria);
 
             // thanks to a bidirectional relationship we can see the card from the student too
+            // thanks to the default fetch Type LAZY we can't see books from this query (a join is not performed, it's many to one, one to many or many to many)
+            // but we can see the studentIdCard because it has fetchType EAGER (one to one)
             studentRepository.findById(1L)
                     .ifPresent(System.out::println);
+
+            // move the logic when we want to lazily load the student's books to a service so that
+            // @Transactional will correctly create a transaction and avoid a self-invocation
+            // Note that a bookRepository doesn't even exist because the books are completely
+            // managed by the Student to whom they belong
+            studentService.fetchStudentBooks(1L);
+
+            // let's try to remove a book from the student and lazily fetch again
+            // all these operations should happen inside transactions so we move to the service
+            studentService.removeBookFromStudent(1L, "Clean Code");
+            studentService.fetchStudentBooks(1L);
 
             // we can see the student from the card
             studentIdCardRepository.findById(1L)
                     .ifPresent(System.out::println);
 
-            // deleting also the student card thanks to the orphanRemoval = true in Student side of relationship
+            // deleting also the student card and books thanks to the orphanRemoval = true in Student side of relationships
             studentRepository.deleteById(1L);
         };
     }

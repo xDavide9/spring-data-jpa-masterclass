@@ -3,14 +3,17 @@ package com.xdavide9.springdatajpamasterclass;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import static jakarta.persistence.GenerationType.*;
 
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-@ToString(exclude = "studentIdCard")    // excluding to avoid a circular reference because of the bidirectional relationship
-@EqualsAndHashCode(exclude = "studentIdCard")
+@ToString(exclude = {"studentIdCard", "books"})    // excluding  studentIdCard to avoid a circular reference because of the bidirectional relationship
+@EqualsAndHashCode(exclude = {"studentIdCard", "books"})    // excluding books because of lazy loading so it's not always garanteed to have books loaded
 @Entity(name = "Student")   // specify the name of the entity as good practice this is used in queries
                             // default is class name anyways like specified
 // @Table allows more granular control of uniqueContraints, table name, schema, indexes
@@ -85,10 +88,41 @@ public class Student {
     @OneToOne(
             mappedBy = "student",  // specify the java field property in the owning side of the relationship
             // while it's tecnically possible to specify cascade here it's better to specify it in the owning side of the relationship
-            orphanRemoval = true // only specify this on the side of the relationship that matters more...
+            orphanRemoval = true, // only specify this on the side of the relationship that matters more...
             // example if i delete a student i also want to delete his card but if i delete a card i don't want to delete the student
             // NOTE it doesn't really have anything to do with the owning side of the relationship
+            cascade = {CascadeType.PERSIST, CascadeType.REMOVE}
     )
     private StudentIdCard studentIdCard;
 
+    // one to many implemented via the aggregate pattern (could consider making this the owning side of the relationship)
+    // bidirectional one to many with Book
+    // books are intended in this case as exclusive property of a single student so if the student is deleted also his books go away
+    // if we wanted to make it so that a single book could be owned by more students it would be a many to many relationship
+    @OneToMany(
+            mappedBy = "student",
+            cascade = {CascadeType.PERSIST, CascadeType.REMOVE},
+            orphanRemoval = true,
+            fetch = FetchType.LAZY  // default fetch type for one to many
+    )
+    @Builder.Default    // always initialize this field with the builder
+    private List<Book> books = new ArrayList<>();
+
+    public boolean addBook(Book book) {
+        if (!books.contains(book)) {
+            books.add(book);
+            book.setStudent(this);  // maintain the bidirectional relationship
+            return true;
+        }
+        return false;
+    }
+
+    public boolean removeBook(Book book) {
+        if (books.contains(book)) {
+            books.remove(book);
+            book.setStudent(null);
+            return true;
+        }
+        return false;
+    }
 }
